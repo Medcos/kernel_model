@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/dmedc/Documents/Projet%207_Impl%C3%A9mentez%20un%20mod%C3%A8le%20de%20scoring/kernel-bank/kernel_model/mlruns/0/57dbfc208aa9452dbf4fc52ea28f4c39/artifacts
+end_time: 1728578940428
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 57dbfc208aa9452dbf4fc52ea28f4c39
+run_name: magnificent-zebra-12
+run_uuid: 57dbfc208aa9452dbf4fc52ea28f4c39
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1728578763511
+status: 3
+tags: []
+user_id: dmedc

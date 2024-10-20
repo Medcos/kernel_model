@@ -181,7 +181,7 @@ def bureau_and_balance(num_rows = None, nan_as_category = True):
 
 
 bureau_agg = bureau_and_balance()
-bureau_agg.head(3)
+bureau_agg.head()
 
 
 # ### 2.3) previous_applications.csv
@@ -255,7 +255,7 @@ def previous_applications(num_rows = None, nan_as_category = True):
 
 
 prev_agg = previous_applications()
-prev_agg.head(3)
+prev_agg.head()
 
 
 # ### 2.4) POS_CASH_balance.csv
@@ -364,7 +364,7 @@ def credit_card_balance(num_rows = None, nan_as_category = True):
 
 
 cc_agg = credit_card_balance()
-cc_agg.head(3)
+cc_agg.head()
 
 
 # ## Consolidation des données
@@ -378,22 +378,15 @@ df = pd.read_csv(os.path.join(os.getcwd(), 'data', "application_train.csv"))
 test_df = pd.read_csv(os.path.join(os.getcwd(), 'data', "application_test.csv"))
 df = pd.concat([df, test_df]).reset_index()
 
-df = df.loc[:, ['SK_ID_CURR', 'DAYS_BIRTH', 'CODE_GENDER','CNT_CHILDREN', 'CNT_FAM_MEMBERS', 'FLAG_OWN_CAR', 'FLAG_OWN_REALTY', 'REGION_POPULATION_RELATIVE', 'NAME_CONTRACT_TYPE', 'AMT_INCOME_TOTAL', 'AMT_CREDIT', 'AMT_ANNUITY', 'AMT_GOODS_PRICE']]
-df.head(3)
-
-
-# In[30]:
-
-
-# Exporter le fichier
-df.to_csv("./info_clients.csv", index=False)
+data = df.loc[:, ['SK_ID_CURR', 'DAYS_BIRTH', 'CODE_GENDER','CNT_CHILDREN', 'CNT_FAM_MEMBERS', 'FLAG_OWN_CAR', 'FLAG_OWN_REALTY', 'REGION_POPULATION_RELATIVE', 'NAME_CONTRACT_TYPE', 'AMT_INCOME_TOTAL', 'AMT_CREDIT', 'AMT_ANNUITY', 'AMT_GOODS_PRICE']]
+data.head(3)
 
 
 # ### 3.2) La consolidation des données transformées
 
 # #### 3.2.1) Les données transformées consolidées
 
-# In[33]:
+# In[32]:
 
 
 def main(debug = False):
@@ -435,16 +428,25 @@ def main(debug = False):
     return df
 
 
-# In[34]:
+# In[33]:
 
 
 df = main()
 
 
-# In[35]:
+# In[34]:
 
 
 df.head(3)
+
+
+# In[35]:
+
+
+# Filtrer les infos client de data_test
+dat = data[data['SK_ID_CURR'].isin(df['SK_ID_CURR'])]
+# Exporter le fichier
+dat.to_csv("./info_clients.csv", index=False)
 
 
 # ### 3.2.2) Analyse des données transformées
@@ -484,7 +486,7 @@ print("Starting LightGBM. Train shape: {}, test shape: {}".format(train_df.shape
 
 
 # Exporter le fichier
-test_df.to_csv("./data_test.csv",index=False)
+# test_df.to_csv("./data_test.csv",index=False)
 
 
 # ## Preprocessing
@@ -501,22 +503,6 @@ df = train_df.sample(frac=0.1)
 # In[46]:
 
 
-# # Remplacer np.inf et -np.inf 
-# df.replace({np.inf: 1.e9, -np.inf: -1e9}, inplace=True)
-
-
-# In[47]:
-
-
-# # Séparer les caractéristiques et la variable cible
-# feats = [f for f in train_df.columns if f not in ['TARGET','SK_ID_CURR','SK_ID_BUREAU','SK_ID_PREV','index']]
-# X = train_df[feats]
-# y = train_df['TARGET']
-
-
-# In[48]:
-
-
 def prepare_data(df):
     # Remplacer np.inf et -np.inf
     df.replace({np.inf: 1.e9, -np.inf: -1.e9}, inplace=True)
@@ -529,7 +515,7 @@ def prepare_data(df):
     return X, y
 
 
-# In[49]:
+# In[47]:
 
 
 X, y = prepare_data(df)
@@ -537,7 +523,7 @@ X, y = prepare_data(df)
 
 # #### 3.4.2) Imputation de données
 
-# In[51]:
+# In[49]:
 
 
 # Remplacer NaN
@@ -552,15 +538,9 @@ X_imputed = pd.DataFrame(imputed_data, columns=X.columns)
 print("Nombre de NaN : {}".format(X_imputed.isnull().sum().sum()))
 
 
-# In[52]:
-
-
-X_imputed.head(3)
-
-
 # #### 3.4.3) Normalisation des données
 
-# In[54]:
+# In[51]:
 
 
 from sklearn.preprocessing import MinMaxScaler
@@ -577,7 +557,7 @@ X_normalized = pd.DataFrame(normalized_data, columns=X_imputed.columns)
 
 # #### 3.4.4) Création de pipeline de preprocessing
 
-# In[56]:
+# In[53]:
 
 
 from sklearn.pipeline import Pipeline
@@ -589,14 +569,14 @@ pipeline = Pipeline(steps=[
 
 # ## Modélisation LightGBM GBDT with KFold or Stratified KFold
 
-# In[58]:
+# In[55]:
 
 
 X = X_normalized
 feats = X.columns
 
 
-# In[59]:
+# In[56]:
 
 
 # Définir le nombre de folds pour la validation croisée
@@ -614,7 +594,7 @@ else:
 
 # #### algorithme
 
-# In[62]:
+# In[59]:
 
 
 from sklearn.model_selection import KFold
@@ -653,7 +633,7 @@ for n_fold, (train_idx, valid_idx) in enumerate(folds.split(X, y)):
     # La prédiction des probabilités des classes (avec l'indice 1) pour les données de validation
     oof_preds[valid_idx] = clf.predict_proba(valid_x, num_iteration=clf.best_iteration_)[:, 1]
     y_pred[valid_idx] = clf.predict(valid_x)
-    
+
     # La features importances 
     fold_importance_df = pd.DataFrame()
     fold_importance_df["feature"] = feats
@@ -669,7 +649,7 @@ for n_fold, (train_idx, valid_idx) in enumerate(folds.split(X, y)):
 
 # #### Evaluation
 
-# In[64]:
+# In[61]:
 
 
 AUC = roc_auc_score(y, oof_preds)
@@ -679,7 +659,7 @@ print('Full AUC score %.6f' % AUC)
 print('Full Accuracy score %.6f' % Accuracy)
 
 
-# In[65]:
+# In[62]:
 
 
 from sklearn.metrics import confusion_matrix
@@ -696,16 +676,15 @@ plt.ylabel('Vraie valeur')
 plt.show()
 
 
+# In[63]:
+
+
+oof_preds[valid_idx]
+
+
 # ### 4.2) Modèle avec l'équilibrage des données par SMOTE 
 
-# In[67]:
-
-
-# Sélection des lignes avec des valeurs infinies
-rows_with_inf = df[df.isin([np.inf, -np.inf]).any(axis=1)]
-
-
-# In[68]:
+# In[65]:
 
 
 from imblearn.pipeline import Pipeline
@@ -713,7 +692,7 @@ from imblearn.over_sampling import SMOTE
 from collections import Counter
 
 
-# In[69]:
+# In[66]:
 
 
 from imblearn.over_sampling import SMOTE
@@ -737,7 +716,7 @@ print("Avant SMOTE y :", Counter(y))
 print("Après SMOTE y:", Counter(y_smote))
 
 
-# In[70]:
+# In[67]:
 
 
 from sklearn.model_selection import KFold
@@ -776,7 +755,7 @@ for n_fold, (train_idx, valid_idx) in enumerate(folds.split(X, y)):
     # La prédiction des probabilités des classes (avec l'indice 1) pour les données de validation
     oof_preds[valid_idx] = clf_smote.predict_proba(valid_x, num_iteration=clf_smote.best_iteration_)[:, 1]
     y_pred[valid_idx] = clf_smote.predict(valid_x)
-    
+
     # La features importances 
     fold_importance_df = pd.DataFrame()
     fold_importance_df["feature"] = feats
@@ -792,7 +771,7 @@ for n_fold, (train_idx, valid_idx) in enumerate(folds.split(X, y)):
 
 # #### Evaluation
 
-# In[72]:
+# In[69]:
 
 
 AUC_smote = roc_auc_score(y, oof_preds)
@@ -802,7 +781,7 @@ print('Full AUC score %.6f' % AUC_smote)
 print('Full Accuracy score %.6f' % Accuracy_smote)
 
 
-# In[73]:
+# In[70]:
 
 
 from sklearn.metrics import confusion_matrix
@@ -821,7 +800,7 @@ plt.show()
 
 # ### 4.3) Modèle par Implémentation d'un score métier pour prioriser le FN
 
-# In[75]:
+# In[72]:
 
 
 import lightgbm as lgb
@@ -834,7 +813,7 @@ cost_fn = 10.0
 
 # #### algorithme
 
-# In[77]:
+# In[74]:
 
 
 from sklearn.model_selection import KFold
@@ -879,7 +858,7 @@ for n_fold, (train_idx, valid_idx) in enumerate(folds.split(X, y)):
     # La prédiction des probabilités des classes (avec l'indice 1) pour les données de validation
     oof_preds[valid_idx] = clf_FN.predict_proba(valid_x, num_iteration=clf_FN.best_iteration_)[:, 1]
     y_pred[valid_idx] = clf_FN.predict(valid_x)
-    
+
     # La features importances 
     fold_importance_df = pd.DataFrame()
     fold_importance_df["feature"] = feats
@@ -895,7 +874,7 @@ for n_fold, (train_idx, valid_idx) in enumerate(folds.split(X, y)):
 
 # #### Evaluation
 
-# In[79]:
+# In[76]:
 
 
 AUC_FN = roc_auc_score(y, oof_preds)
@@ -905,7 +884,7 @@ print('Full AUC score %.6f' % AUC_FN)
 print('Full Accuracy score %.6f' % Accuracy_FN)
 
 
-# In[80]:
+# In[77]:
 
 
 from sklearn.metrics import confusion_matrix
@@ -924,7 +903,7 @@ plt.show()
 
 # ## Tableau  d'évaluation des  performances 
 
-# In[82]:
+# In[79]:
 
 
 Performance_Table = pd.DataFrame({
@@ -938,15 +917,9 @@ Performance_Table = pd.DataFrame({
 Performance_Table
 
 
-# In[83]:
-
-
-model = clf_smote
-
-
 # ## Feature Importance
 
-# In[85]:
+# In[81]:
 
 
 # Obtenir les 10 meilleures caractéristiques
@@ -968,27 +941,46 @@ plt.title('LightGBM Features (avg over folds)')
 plt.show()
 
 
+# In[82]:
+
+
+# model = clf_smote
+
+
 # ## Enregistrement du modèle en local avec MLflow
 
-# In[88]:
+# In[84]:
 
 
 import mlflow
 import mlflow.lightgbm
+import os
 
 # Démarrer une nouvelle exécution MLflow
 with mlflow.start_run():
     # Chemin d'accès local où vous souhaitez enregistrer le modèle
     local_path = os.path.join(os.getcwd(), "modele")
     local_path_pre = os.path.join(os.getcwd(), "preprocessing")
-    
+
     # Stocker le modèle avec MLflow en local
-    mlflow.lightgbm.log_model(model, "model")
-    mlflow.lightgbm.save_model(model, local_path)
+    mlflow.lightgbm.log_model(clf_smote, "model")
+    mlflow.lightgbm.save_model(clf_smote, local_path)
 
     # Enregistrer le pipeline dans MLflow
     mlflow.sklearn.log_model(pipeline,"preprocessing")
     mlflow.sklearn.save_model(pipeline, local_path_pre)
+
+    # Enregistrement des paramètres et des métriques
+    mlflow.log_metric("Accuracy_smote", Accuracy_smote)
+    mlflow.log_metric("AUC_smote", AUC_smote)
     
     print(f"Modèle et pipeline enregistrés localement à l'emplacement {local_path}")
+
+
+# In[85]:
+
+
+"Modèle avec deséquilibre" : [AUC_FN, Accuracy],
+    "Modèle équilibré par SMOTE" : [AUC_smote, Accuracy_smote],
+    "Modèle avec score métier" : [AUC_FN, Accuracy_FN]
 
